@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { useApi } from '@/context/ApiContext';
 import { isEmailValid } from '@/helpers/utility';
 import toast from 'react-hot-toast';
+import Avatar from '@mui/material/Avatar';
+import { Typography } from '@mui/material';
+import type { IAttendeeInformation } from '@quickmeet/shared';
 
 interface AttendeeInputProps {
   id: string;
@@ -14,7 +17,7 @@ interface AttendeeInputProps {
 }
 
 export default function AttendeeInput({ id, onChange, value, type }: AttendeeInputProps) {
-  const [options, setOptions] = useState<string[]>([]);
+  const [options, setOptions] = useState<IAttendeeInformation[]>([]);
   const [textInput, setTextInput] = useState('');
 
   const api = useApi();
@@ -23,7 +26,7 @@ export default function AttendeeInput({ id, onChange, value, type }: AttendeeInp
     if (newInputValue.length > 2) {
       const res = await api.searchPeople(newInputValue);
       if (res.status === 'success') {
-        setOptions(res.data || []);
+        setOptions((res.data as IAttendeeInformation[]) || []);
       }
     }
   };
@@ -65,6 +68,11 @@ export default function AttendeeInput({ id, onChange, value, type }: AttendeeInp
   };
 
   const debouncedInputChange = debounce(handleInputChange, 300);
+
+  const filteredEmails = (newValue: Array<string | IAttendeeInformation>): string[] => {
+    const emails = newValue.map((option) => (typeof option === 'object' && option.email ? option.email : (option as string)));
+    return emails.filter((email) => emails.indexOf(email) === emails.lastIndexOf(email));
+  };
 
   return (
     <Box
@@ -108,11 +116,14 @@ export default function AttendeeInput({ id, onChange, value, type }: AttendeeInp
           multiple
           options={options}
           value={value || []}
-          getOptionLabel={(option) => option}
+          getOptionLabel={(option) => (typeof option === 'object' && option.email ? option.email : '')}
+          noOptionsText=""
           freeSolo
           inputValue={textInput}
           fullWidth
-          onChange={handleSelectionChange}
+          onChange={(_, newValue) => {
+            handleSelectionChange(_, filteredEmails(newValue));
+          }}
           slotProps={{
             listbox: {
               sx: {
@@ -132,9 +143,9 @@ export default function AttendeeInput({ id, onChange, value, type }: AttendeeInp
           }}
           onInputChange={debouncedInputChange}
           renderTags={(value: readonly string[], getTagProps) =>
-            value.map((option: string, index: number) => {
+            value.map((email: string, index: number) => {
               const { key, ...tagProps } = getTagProps({ index });
-              return <Chip variant="filled" label={option} key={key} {...tagProps} />;
+              return <Chip variant="filled" label={email} key={key} {...tagProps} />;
             })
           }
           renderInput={(params) => (
@@ -173,6 +184,34 @@ export default function AttendeeInput({ id, onChange, value, type }: AttendeeInp
               ]}
             />
           )}
+          renderOption={(props, option) => {
+            const { key, ...optionProps } = props;
+            const isSelected = value?.includes(option.email);
+            return (
+              <Box
+                key={key}
+                component="li"
+                sx={[
+                  (theme) => ({
+                    '& > img': { mr: 2, flexShrink: 0 },
+                    backgroundColor: isSelected ? theme.palette.grey[100] : 'transparent',
+                  }),
+                ]}
+                {...optionProps}
+                gap={1}
+              >
+                <Avatar src={option.photo} alt={`Image of ${option.name}`} />
+                <Box>
+                  <Typography variant="subtitle2" noWrap={true} width={250}>
+                    {option.name}
+                  </Typography>
+                  <Typography variant="subtitle2" color="text.secondary" noWrap={true} width={250}>
+                    {option.email}
+                  </Typography>
+                </Box>
+              </Box>
+            );
+          }}
         />
       </Box>
     </Box>

@@ -10,4 +10,4 @@ export {
   StatusTypes,
 } from './dto';
 
-export { IConferenceRoom } from './interfaces';
+export { IConferenceRoom, IAttendeeInformation } from './interfaces';

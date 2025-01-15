@@ -222,7 +222,7 @@ export class GoogleApiService implements IGoogleApiService {
     const [err, res]: [GaxiosError, GaxiosResponse<people_v1.Schema$SearchDirectoryPeopleResponse>] = await to(
       peopleService.people.searchDirectoryPeople({
         query,
-        readMask: 'emailAddresses',
+        readMask: 'emailAddresses,photos,names',
         pageSize: 10,
         sources: ['DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE'],
       }),
